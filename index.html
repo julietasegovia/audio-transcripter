@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Audio Transcriptor</title>
+        <link rel="preconnect" href="https://fonst.googleapis.com">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <main>
+            <div class="top">
+                <button id="langtoggle"></button>
+            </div>
+            <h1>Audio to text</h1>
+            <p>Drop an audio file to get the written words</p>
+            <label class="drop">
+                <input type="file" id="file" accept="audio/*,video/mp4,video/webm,.m4a,.opus,.mkv">
+                <strong id="dropTitle">Choose an audio file</strong>
+                <span data-i18n="hint">or drag it here</span>
+            </label>
+            <div clas="row">
+                <label for="lang">Language</label>
+                <select id="lang">
+                    <option value="auto">Detect automatically</option>
+                    <option value="english">English</option>
+                    <option value="spanish">Spanish</option>
+                </select>
+                <button class="primary" id="go" disabled>Transcribe</button>
+            </div>
+            <div class="bar"><i></i></div>
+            <p class="status" id="status" role="status"></p>
+
+            <section id="result">
+                <p class="meta" id="meta"></p>
+                <textarea id="text" aria-label="Transcript"></textarea>
+                <div clas="row">
+                    <button id="copy">Copy Text</button>
+                    <button id="downloadtxt">Download .txt</button>
+                    <button id="downloadstr">Download .str</button>
+                </div>
+            </section>
+        </main>
+    </body>
+</html>
