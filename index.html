@@ -9,37 +9,39 @@
     </head>
     <body>
         <main>
-            <div class="top">
-                <button id="langtoggle"></button>
-            </div>
-            <h1>Audio to text</h1>
-            <p>Drop an audio file to get the written words</p>
-            <label class="drop">
-                <input type="file" id="file" accept="audio/*,video/mp4,video/webm,.m4a,.opus,.mkv">
-                <strong id="dropTitle">Choose an audio file</strong>
-                <span data-i18n="hint">or drag it here</span>
-            </label>
-            <div clas="row">
-                <label for="lang">Language</label>
-                <select id="lang">
-                    <option value="auto">Detect automatically</option>
-                    <option value="english">English</option>
-                    <option value="spanish">Spanish</option>
-                </select>
-                <button class="primary" id="go" disabled>Transcribe</button>
-            </div>
-            <div class="bar"><i></i></div>
-            <p class="status" id="status" role="status"></p>
+        <div class="top"><button type="button" id="langToggle"></button></div>
+        <h1 data-i18n="h1">Audio to text</h1>
+        <p class="lede" data-i18n="lede">Drop in a recording and get the words back. Your file is deleted as soon as it is transcribed.</p>
 
-            <section id="result">
-                <p class="meta" id="meta"></p>
-                <textarea id="text" aria-label="Transcript"></textarea>
-                <div clas="row">
-                    <button id="copy">Copy Text</button>
-                    <button id="downloadtxt">Download .txt</button>
-                    <button id="downloadstr">Download .str</button>
-                </div>
-            </section>
+        <label class="drop" id="drop">
+            <input type="file" id="file" accept="audio/*,video/mp4,video/webm,.m4a,.opus,.mkv">
+            <strong id="dropTitle">Choose an audio file</strong>
+            <span data-i18n="hint">or drag it here. MP3, WAV, M4A, OGG, FLAC and more.</span>
+        </label>
+
+        <div class="row">
+            <label for="lang" data-i18n="lang">Language</label>
+            <select id="lang">
+            <option value="auto" data-i18n="auto">Detect automatically</option>
+            <option value="es" data-i18n="l_es">Spanish</option><option value="en" data-i18n="l_en">English</option>
+            </select>
+            <button class="primary" id="go" data-i18n="go" disabled>Transcribe</button>
+        </div>
+
+        <div class="bar" id="bar"><i></i></div>
+        <p class="status" id="status" role="status"></p>
+
+        <section id="result">
+            <p class="meta" id="meta"></p>
+            <textarea id="text" aria-label="Transcript" data-i18n-aria="tx"></textarea>
+            <div class="row">
+            <button id="copy" data-i18n="copy">Copy text</button>
+            <button id="dlTxt" data-i18n="dlTxt">Download .txt</button>
+            <button id="dlSrt" data-i18n="dlSrt">Download subtitles (.srt)</button>
+            </div>
+        </section>
         </main>
+
+        <script src="script.js"></script>
     </body>
 </html>
