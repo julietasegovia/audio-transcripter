@@ -112,5 +112,25 @@ $("go").addEventListener("click", async () => {
 
 function save(name, content, type){
     const a = document.createElement("a")
-
+    a.href = URL.createObjectURL(new Blob([content], {type}))
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(a.href)
 }
+
+const ts = s => {const p = (n, w = 2) => String(Math.floor(n)).padStart(w, "0")
+    return `${p(s / 3600)}:${p((s % 3600) / 60)}:${p(s % 60)},${p((s % 1) * 1000, 3)}`
+}
+
+$("copy").addEventListener("click", async () => {
+    await navigator.clipboard.writeText($("text").value)
+    setStatus("copied")
+})
+$("dlTxt").addEventListener("click", () => save(baseName + ".txt", $("text").value, "text/plain"))
+$("dlStr").addEventListener("click", () => 
+    save(baseName + ".str", segments.map((s, i) => `${i + 1}\n${ts(s.start)} --> ${ts(s.end)}\n${s.text}\n`).join("\n"), "text/plain"))
+$("langToggle").addEventListener("click", () => {
+  cur = cur === "en" ? "es" : "en"
+  try { localStorage.setItem("ui-lang", cur)} catch (e) {}
+  applyLang()
+})

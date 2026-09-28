@@ -2,7 +2,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from fastapi import FastAPI, File, From, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from faster_whisper import WhisperModel
@@ -16,15 +16,15 @@ model = WhisperModel(MODEL_SIZE, compute_type="int8")
 
 BASE = Path(__file__).parent
 
-@app.post("/api/trascribe")
-async def transcribe(file: UploadFile = File(...), language: str = From("auto")):
+@app.post("/api/transcribe")
+async def transcribe(file: UploadFile = File(...), language: str = Form("auto")):
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in ALLOWED:
         raise HTTPException(400, f"Unsupported file type. Only {', '.join(sorted(ALLOWED))}")
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        sixe=0 
-        while chunk := await file.read(1024*1024):
+        size = 0
+        while chunk := await file.read(1024 * 1024):
             size += len(chunk)
             if size > MAX_MB * 1024 * 1024:
                 tmp.close()
@@ -45,7 +45,7 @@ async def transcribe(file: UploadFile = File(...), language: str = From("auto"))
     finally:
         os.unlink(path)
 
-    return{
+    return {
         "language": info.language,
         "duration": info.duration,
         "text": " ".join(s["text"] for s in segs),
