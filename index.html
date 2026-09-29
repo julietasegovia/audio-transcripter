@@ -3,27 +3,27 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Audio Transcriptor</title>
-        <link rel="preconnect" href="https://fonst.googleapis.com">
-        <link rel="stylesheet" href="/static/style.css">
+        <title>Audio to text</title>
+        <link rel="stylesheet" href="style.css">
     </head>
     <body>
         <main>
         <div class="top"><button type="button" id="langToggle"></button></div>
         <h1 data-i18n="h1">Audio to text</h1>
-        <p class="lede" data-i18n="lede">Drop in a recording and get the words back. Your file is deleted as soon as it is transcribed.</p>
+        <p class="lede" data-i18n="lede">Drop in a recording and get the words back. Everything runs on your device, nothing is uploaded.</p>
 
         <label class="drop" id="drop">
             <input type="file" id="file" accept="audio/*,video/mp4,video/webm,.m4a,.opus,.mkv">
             <strong id="dropTitle">Choose an audio file</strong>
-            <span data-i18n="hint">or drag it here. MP3, WAV, M4A, OGG, FLAC and more.</span>
+            <span data-i18n="hint">or drag it here</span>
         </label>
 
         <div class="row">
             <label for="lang" data-i18n="lang">Language</label>
             <select id="lang">
             <option value="auto" data-i18n="auto">Detect automatically</option>
-            <option value="es" data-i18n="l_es">Spanish</option><option value="en" data-i18n="l_en">English</option>
+            <option value="es" data-i18n="l_es">Spanish</option>
+            <option value="en" data-i18n="l_en">English</option>
             </select>
             <button class="primary" id="go" data-i18n="go" disabled>Transcribe</button>
         </div>
@@ -37,11 +37,11 @@
             <div class="row">
             <button id="copy" data-i18n="copy">Copy text</button>
             <button id="dlTxt" data-i18n="dlTxt">Download .txt</button>
-            <button id="dlSrt" data-i18n="dlSrt">Download subtitles (.srt)</button>
+            <button id="dlSrt" data-i18n="dlSrt">Download .srt</button>
             </div>
         </section>
         </main>
 
-        <script src="/static/script.js"></script>
+        <script src="script.js"></script>
     </body>
 </html>

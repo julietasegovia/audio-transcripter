@@ -1,29 +1,37 @@
-const $ = id => document.getElementById(id)
+const $ = id => document.getElementById(id);
 
-const MODEL = "Xenvoa/whisper-base"
+// Speech model. Bigger = more accurate but slower and a larger first download.
+// Options: "Xenova/whisper-tiny", "Xenova/whisper-base", "Xenova/whisper-small"
+const MODEL = "Xenova/whisper-base";
 
-const LANG_NAMES = {es: "spanish", en: "english"}
+// Values of the language dropdown -> names Whisper understands
+const LANG_NAMES = { es: "spanish", en: "english" };
 
 const I18N = {
     en: {
         title: "Audio to text",
         h1: "Audio to text",
-        lede: "Drop in a recording and get the words back",
+        lede: "Drop in a recording and get the words back. Everything runs on your device, nothing is uploaded.",
+        note: "The first time, a speech model (roughly 100 MB) downloads to your browser. After that it loads instantly.",
         choose: "Choose an audio file",
         hint: "or drag it here",
         lang: "Language",
         auto: "Detect automatically",
         l_es: "Spanish",
         l_en: "English",
+        detected: "auto-detected",
         go: "Transcribe",
         copy: "Copy text",
         dlTxt: "Download .txt",
         dlSrt: "Download .srt",
         tx: "Transcript",
-        busy: "Transcribing...",
+        decoding: "Reading audio...",
+        loadModel: "Loading the speech model (first visit downloads it)",
+        busy: "Transcribing... long files can take a while",
         nospeech: "No speech found in this audio",
         copied: "Copied.",
         error: "Something went wrong...",
+        decodeErr: "Couldn't read this file. Try an MP3, WAV or M4A.",
         meta: (l, d) => `Language: ${l} - Length: ${d} s`,
         toggle: "Español",
         toggleLang: "es"
@@ -31,23 +39,28 @@ const I18N = {
     es: {
         title: "Audio a texto",
         h1: "Audio a texto",
-        lede: "Subi un audio y obtene el texto",
-        choose: "Subi un audio",
-        hint: "o arrastralo aca",
+        lede: "Subí un audio y obtené el texto. Todo pasa en tu dispositivo, no se sube nada.",
+        note: "La primera vez se descarga un modelo de voz (unos 100 MB) en tu navegador. Después carga al instante.",
+        choose: "Subí un audio",
+        hint: "o arrastralo acá",
         lang: "Idioma",
         auto: "Detectar automáticamente",
         l_es: "Español",
         l_en: "Inglés",
+        detected: "detectado automáticamente",
         go: "Transcribir",
         copy: "Copiar texto",
         dlTxt: "Descargar .txt",
         dlSrt: "Descargar .srt",
         tx: "Transcripción",
-        busy: "Transcribiendo...",
-        nospeech: "No se encontro voz en el audio",
+        decoding: "Leyendo el audio...",
+        loadModel: "Cargando el modelo de voz (la primera vez se descarga)",
+        busy: "Transcribiendo... los archivos largos pueden tardar",
+        nospeech: "No se encontró voz en el audio",
         copied: "Copiado.",
-        error: "Algo salio mal...",
-        meta: (l, d) => `Idioma: ${l} - Duracion: ${d} s`,
+        error: "Algo salió mal...",
+        decodeErr: "No pude leer este archivo. Probá con un MP3, WAV o M4A.",
+        meta: (l, d) => `Idioma: ${l} - Duración: ${d} s`,
         toggle: "English",
         toggleLang: "en"
     }
@@ -56,7 +69,7 @@ const I18N = {
 // State (declared before anything uses it)
 let file = null, segments = [], baseName = "transcript";
 let lastStatus = { msg: "", err: false }, lastMeta = null;
-let worker = null
+let worker = null;
 
 let cur = "en";
 try {
@@ -79,11 +92,12 @@ function applyLang() {
 }
 
 function renderMeta() {
-    if (lastMeta) $("meta").textContent = t("meta")(lastMeta.language, Math.round(lastMeta.duration));
+    if (!lastMeta) return;
     const l = lastMeta.lang === "auto" ? t("detected") : t("l_" + lastMeta.lang);
     $("meta").textContent = t("meta")(l, Math.round(lastMeta.duration));
 }
 
+// msg is either a key from the dictionary or plain text
 function setStatus(msg, err) {
     lastStatus = { msg, err };
     $("status").textContent = I18N[cur][msg] ?? msg;
@@ -99,37 +113,45 @@ function pick(f) {
     setStatus("");
 }
 
+// Decode any audio/video file to 16 kHz mono samples, which is what Whisper expects.
+// The initial decode uses the device's own rate (some browsers, notably Firefox on
+// Linux, error out if asked to open an AudioContext at a specific rate directly);
+// an OfflineAudioContext then resamples the result down to 16 kHz.
 async function decodeAudio(f) {
-    const ctx = new AudioContext({sampleRate: 100});
-    try{
-        const buf = await ctx.decodeAudioData(await f.arrayBuffer());
-        const channels = buf.numberOfChannels;
-        const audio = new Float32Array(buf.length);
-        for(let c = 0; c < channels; c++){
-            const data = buf.getChannelData(c);
-            for (let i = 0; i < data.length; i++)
-                audio[i] += data[1] /channels;
-        }
-        return {audio, duration: buf.duration};
-    } catch(e){
+    let ctx;
+    try {
+        ctx = new AudioContext();
+        const raw = await ctx.decodeAudioData(await f.arrayBuffer());
+
+        const targetRate = 16000;
+        const offline = new OfflineAudioContext(1, Math.ceil(raw.duration * targetRate), targetRate);
+        const source = offline.createBufferSource();
+        source.buffer = raw;
+        source.connect(offline.destination);
+        source.start();
+        const resampled = await offline.startRendering();
+
+        return { audio: resampled.getChannelData(0).slice(), duration: raw.duration };
+    } catch (e) {
         throw new Error(t("decodeErr"));
-    }finally{
-        ctx.close();
+    } finally {
+        if (ctx) ctx.close();
     }
 }
 
-function runWhisper(audio, langCode){
-    return new Promise((resolve, reject) =>{
-        if(!worker) worker = new Worker("worker.js", {type: "module"});
-        worker.onmessage = ({data}) => {
-            if(data.type === "download") setStatus(`${t("loadModel")} ${Math.round(data.progress)}%`);
-            else if(data.type === "transcribing") setStatus("busy");
-            else if(data.type === "done") resolve(data);
-            else if(data.type === "error") reject(new Error(data.message));
+function runWhisper(audio, langCode) {
+    return new Promise((resolve, reject) => {
+        if (!worker) worker = new Worker("worker.js", { type: "module" });
+        worker.onmessage = ({ data }) => {
+            if (data.type === "download") setStatus(`${t("loadModel")} ${Math.round(data.progress)}%`);
+            else if (data.type === "transcribing") setStatus("busy");
+            else if (data.type === "done") resolve(data);
+            else if (data.type === "error") reject(new Error(data.message));
         };
         worker.onerror = e => reject(new Error(e.message || t("error")));
         setStatus("loadModel");
-        worker.postMessage({ audio, model: MODEL, language: LANG_NAMES[langCode] || null}, [audio.buffer]);
+        // Transfer the buffer instead of copying it
+        worker.postMessage({ audio, model: MODEL, language: LANG_NAMES[langCode] || null }, [audio.buffer]);
     });
 }
 
