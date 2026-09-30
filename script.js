@@ -1,10 +1,7 @@
 const $ = id => document.getElementById(id);
 
-// Speech model. Bigger = more accurate but slower and a larger first download.
-// Options: "Xenova/whisper-tiny", "Xenova/whisper-base", "Xenova/whisper-small"
 const MODEL = "Xenova/whisper-base";
 
-// Values of the language dropdown -> names Whisper understands
 const LANG_NAMES = { es: "spanish", en: "english" };
 
 const I18N = {
@@ -12,7 +9,6 @@ const I18N = {
         title: "Audio to text",
         h1: "Audio to text",
         lede: "Drop in a recording and get the words back. Everything runs on your device, nothing is uploaded.",
-        note: "The first time, a speech model (roughly 100 MB) downloads to your browser. After that it loads instantly.",
         choose: "Choose an audio file",
         hint: "or drag it here",
         lang: "Language",
@@ -40,7 +36,6 @@ const I18N = {
         title: "Audio a texto",
         h1: "Audio a texto",
         lede: "Subí un audio y obtené el texto. Todo pasa en tu dispositivo, no se sube nada.",
-        note: "La primera vez se descarga un modelo de voz (unos 100 MB) en tu navegador. Después carga al instante.",
         choose: "Subí un audio",
         hint: "o arrastralo acá",
         lang: "Idioma",
@@ -66,7 +61,6 @@ const I18N = {
     }
 };
 
-// State (declared before anything uses it)
 let file = null, segments = [], baseName = "transcript";
 let lastStatus = { msg: "", err: false }, lastMeta = null;
 let worker = null;
@@ -97,7 +91,6 @@ function renderMeta() {
     $("meta").textContent = t("meta")(l, Math.round(lastMeta.duration));
 }
 
-// msg is either a key from the dictionary or plain text
 function setStatus(msg, err) {
     lastStatus = { msg, err };
     $("status").textContent = I18N[cur][msg] ?? msg;
@@ -113,10 +106,6 @@ function pick(f) {
     setStatus("");
 }
 
-// Decode any audio/video file to 16 kHz mono samples, which is what Whisper expects.
-// The initial decode uses the device's own rate (some browsers, notably Firefox on
-// Linux, error out if asked to open an AudioContext at a specific rate directly);
-// an OfflineAudioContext then resamples the result down to 16 kHz.
 async function decodeAudio(f) {
     let ctx;
     try {
